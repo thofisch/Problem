@@ -1,222 +1,175 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace Trifork
 {
+    /// <summary>
+    ///     See <a href="https://tools.ietf.org/html/rfc7807">RFC 7807: Problem Details for HTTP APIs</a>
+    /// </summary>
     public class Problem
     {
-        private readonly Uri type;
-        private readonly String title;
-        private readonly StatusType status;
-        private readonly String detail;
-        private readonly Uri instance;
-        private readonly IDictionary<String, Object> parameters;
+        private readonly IDictionary<string, object> _parameters = new Dictionary<string, object>();
+
+        [JsonConstructor]
+        private Problem() 
+        {
+        }
 
         public Problem(Uri type) : this(type, null)
         {
         }
 
-        public Problem(Uri type, String title) : this(type, title, null)
+        public Problem(Uri type, string title) : this(type, title, null)
         {
         }
 
-        public Problem(Uri type, String title, StatusType status) : this(type, title, status, null)
+        public Problem(Uri type, string title, StatusType status) : this(type, title, status, null)
         {
         }
 
-        public Problem(Uri type,
-            String title,
-            StatusType status,
-            String detail) : this(type, title, status, detail, null)
+        public Problem(Uri type, string title, StatusType status, string detail) : this(type, title, status, detail,
+            null)
         {
         }
 
-        public Problem(Uri type,
-            String title,
-            StatusType status,
-            String detail,
-            Uri instance) : this(type, title, status, detail, instance, null)
+        public Problem(Uri type, string title, StatusType status, string detail, Uri instance) : this(type, title,
+            status, detail, instance, null)
         {
         }
 
-        public Problem(Uri type,
-            String title,
-            StatusType status,
-            String detail,
-            Uri instance,
-            Problem cause) : this(type, title, status, detail, instance, cause, null)
+        public Problem(Uri type, string title, StatusType status, string detail, Uri instance, Problem cause) : this(type, title, status, detail, instance, cause, null)
         {
         }
 
-        public Problem(Uri type,
-            String title,
-            StatusType status,
-            String detail,
-            Uri instance,
-            Problem cause,
-            IDictionary<String, Object> parameters)
+        public Problem(Uri type, string title, StatusType status, string detail, Uri instance, Problem cause, IDictionary<string, object> parameters)
         {
-            this.type = type;
-            this.title = title;
-            this.status = status;
-            this.detail = detail;
-            this.instance = instance;
-            this.parameters = parameters ?? new Dictionary<string, object>();
+            Type = type;
+            Title = title;
+            Status = status;
+            Detail = detail;
+            Instance = instance;
+            Cause = cause;
+            _parameters = parameters ?? new Dictionary<string, object>();
         }
 
         /// <summary>
-        /// An absolute Uri that identifies the problem type. When dereferenced,
-        /// it SHOULD provide human-readable documentation for the problem type
-        /// (e.g., using HTML). When this member is not present, its value is
-        /// assumed to be "about:blank".
-        ///
-        /// @return an absolute Uri that identifies this problem's type
+        ///     "type" (string) - A URI reference[RFC3986] that identifies the problem type.This specification encourages that,
+        ///     when dereferenced,
+        ///     it provide human-readable documentation for the problem type (e.g., using HTML [W3C.REC-html5-20141028]).
+        ///     When this member is not present, its value is assumed to be "about:blank"
+        ///     Consumers MUST use the "type" string as the primary identifier forthe problem type
+        ///     When "about:blank" is used, the title SHOULD be the same as the recommended HTTP status phrase for that code(e.g.,
+        ///     "Not Found" for
+        ///     404, and so on), although it MAY be localized to suit client preferences(expressed with the Accept-Language request
+        ///     header)
         /// </summary>
-        public Uri getType()
-        {
-            return type;
-        }
+        public Uri Type { get; set; }
 
         /// <summary>
-        /// A short, human-readable summary of the problem type. It SHOULD NOT
-        /// change from occurrence to occurrence of the problem, except for
-        /// purposes of localisation.
-        ///
-        /// @return a short, human-readable summary of this problem
+        ///     "title" (string) - A short, human-readable summary of the problem type.It SHOULD NOT change from occurrence to
+        ///     occurrence of the
+        ///     problem, except for purposes of localization(e.g., using proactive content negotiation; see[RFC7231], Section 3.4)
+        ///     the "title" string is advisory and included only for users who are not aware of the semantics of the URI and do not
+        ///     have the ability to discover them (e.g., offline log analysis). Consumers SHOULD NOT automatically dereference the
+        ///     type URI.
         /// </summary>
-        public String getTitle()
-        {
-            return title;
-        }
+        public string Title { get; set; }
 
         /// <summary>
-        /// The HTTP status code generated by the origin server for this
-        /// occurrence of the problem.
-        ///
-        /// @return the HTTP status code
+        ///     "status" (number) - The HTTP status code ([RFC7231], Section 6) generated by the origin server for this occurrence
+        ///     of the problem.
+        ///     The "status" member, if present, is only advisory; it conveys the HTTP status code used for the convenience of the
+        ///     consumer.
+        ///     Generators MUST use the same status code in the actual HTTP response, to assure that generic HTTP software that
+        ///     does not understand this
+        ///     format still behaves correctly.  See Section 5 for further caveats regarding its use.
         /// </summary>
-        public StatusType getStatus()
-        {
-            return status;
-        }
+        [JsonConverter(typeof(StatusTypeConverter))]
+        public StatusType Status { get; set; }
 
         /// <summary>
-        /// A human readable explanation specific to this occurrence of the problem.
-        ///
-        /// @return A human readable explaination of this problem
+        ///     "detail" (string) - A human-readable explanation specific to this occurrence of the problem.
+        ///     The "detail" member, if present, ought to focus on helping the client correct the problem, rather than giving
+        ///     debugging information.
+        ///     Consumers SHOULD NOT parse the "detail" member for information; extensions are more suitable and less error-prone
+        ///     ways to obtain such information.
         /// </summary>
-        public String getDetail()
-        {
-            return detail;
-        }
+        public string Detail { get; set; }
 
         /// <summary>
-        /// An absolute Uri that identifies the specific occurrence of the problem.
-        /// It may or may not yield further information if dereferenced.
-        ///
-        /// @return an absolute Uri that identifies this specific problem
+        ///     "instance" (string) - A URI reference that identifies the specific occurrence of the problem.
+        ///     It may or may not yield further information if dereferenced.
         /// </summary>
-        public Uri getInstance()
-        {
-            return instance;
-        }
+        public Uri Instance { get; set; }
+
+        public Problem Cause { get; set; }
 
         /// <summary>
-        /// Optional, additional attributes of the problem. Implementations can choose to ignore this in favor of concrete,
-        /// typed fields.
-        ///
-        /// @return additional parameters
+        ///     Optional, additional attributes of the problem. Implementations can choose to ignore this in favor of concrete,
+        ///     typed fields.
         /// </summary>
-        public IDictionary<String, Object> getParameters()
+        [JsonExtensionData]
+        public IDictionary<string, object> Parameters => _parameters;
+
+        public static Problem ValueOf(StatusType status)
         {
-            return new ReadOnlyDictionary<String, Object>(parameters);
+            return ProblemBuilder.Create(status).Build();
         }
 
-        public Problem getCause()
+        public static Problem ValueOf(StatusType status, string detail)
         {
-            throw new NotImplementedException();
+            return ProblemBuilder.Create(status).WithDetail(detail).Build();
         }
 
-        public static ProblemBuilder builder()
+        public static Problem ValueOf(StatusType status, Uri instance)
         {
-            return new ProblemBuilder();
+            return ProblemBuilder.Create(status).WithInstance(instance).Build();
         }
 
-        static Problem valueOf(StatusType status)
+        public static Problem ValueOf(StatusType status, string detail, Uri instance)
         {
-            return ProblemBuilder.create(status).build();
+            return ProblemBuilder.Create(status).WithDetail(detail).WithInstance(instance).Build();
         }
 
-        static Problem valueOf(StatusType status, String detail)
-        {
-            return ProblemBuilder.create(status).withDetail(detail).build();
-        }
-
-        static Problem valueOf(StatusType status, Uri instance)
-        {
-            return ProblemBuilder.create(status).withInstance(instance).build();
-        }
-
-        static Problem valueOf(StatusType status, String detail, Uri instance)
-        {
-            return ProblemBuilder.create(status).withDetail(detail).withInstance(instance).build();
-        }
-
-        /// <summary>
-        /// Specification by example:
-        /// <p>
-        /// <pre>{@code
-        ///   // Returns "about:blank{404, Not Found}"
-        ///   Problem.valueOf(NOT_FOUND).toString();
-        ///
-        ///   // Returns "about:blank{404, Not Found, Order 123}"
-        ///   Problem.valueOf(NOT_FOUND, "Order 123").toString();
-        ///
-        ///   // Returns "about:blank{404, Not Found, instance=https://example.org/}"
-        ///   Problem.valueOf(NOT_FOUND, Uri.create("https://example.org/")).toString();
-        ///
-        ///   // Returns "about:blank{404, Not Found, Order 123, instance=https://example.org/"}
-        ///   Problem.valueOf(NOT_FOUND, "Order 123", Uri.create("https://example.org/")).toString();
-        ///
-        ///   // Returns "https://example.org/problem{422, Oh, oh!, Crap., instance=https://example.org/problem/123}
-        ///   Problem.builder()
-        ///       .withType(Uri.create("https://example.org/problem"))
-        ///       .withTitle("Oh, oh!")
-        ///       .withStatus(UNPROCESSABLE_ENTITY)
-        ///       .withDetail("Crap.")
-        ///       .withInstance(Uri.create("https://example.org/problem/123"))
-        ///       .build()
-        ///       .toString();
-        /// }</pre>
-        ///
-        /// @param problem the problem
-        /// @return a string representation of the problem
-        /// @see Problem#valueOf(StatusType)
-        /// @see Problem#valueOf(StatusType, String)
-        /// @see Problem#valueOf(StatusType, Uri)
-        /// @see Problem#valueOf(StatusType, String, Uri)
-        /// </summary>
-        protected static String toString(Problem problem)
+        public override string ToString()
         {
             var parts = new[]
             {
-                problem.getStatus() == null ? null : problem.getStatus().StatusCode.ToString(),
-                problem.getTitle(),
-                problem.getDetail(),
-                problem.getInstance() == null ? null : "instance=" + problem.getInstance(),
+                Status == null ? null : Status.StatusCode.ToString(),
+                Title,
+                Detail,
+                Instance == null ? null : "instance=" + Instance,
                 //        problem.getParameters()
                 //            .entrySet().stream()
                 //            .map(Map.Entry::toString))
             }.Where(x => x != null);
 
-            return $"{problem.GetType().Name} + {{{string.Join(", ", parts)}}}";
+            return $"{GetType().Name}{{{string.Join(", ", parts)}}}";
+        }
+    }
+
+    public class StatusTypeConverter : JsonConverter
+    {
+        //public override bool CanRead { get; } = false;
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            var statusType = (StatusType) value;
+
+            writer.WriteValue(statusType.StatusCode);
         }
 
-        public String toString()
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            return Problem.toString(this);
+            return StatusType.Ok;
+            //throw new NotImplementedException();
+        }
+
+        public override bool CanConvert(Type objectType)
+        {
+            return typeof(StatusType).IsAssignableFrom(objectType);
         }
     }
 }

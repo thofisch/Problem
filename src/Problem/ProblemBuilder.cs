@@ -3,94 +3,79 @@ using System.Collections.Generic;
 
 namespace Trifork
 {
-    /**
-         * @see <a href="https://tools.ietf.org/html/rfc7807">RFC 7807: Problem Details for HTTP APIs</a>
-         */
-
-
     public class ProblemBuilder
     {
-        private static readonly ISet<string> RESERVED_PROPERTIES =
-            new HashSet<string>(new[] {"type", "title", "status", "detail", "instance", "cause"});
+        public static ProblemBuilder Create(StatusType status)
+        {
+            return new ProblemBuilder()
+                .WithTitle(status.ReasonPhrase)
+                .WithStatus(status);
+        }
 
-        private Uri type;
-        private String title;
-        private StatusType status;
-        private String detail;
-        private Uri instance;
-        private Problem cause;
-        private readonly IDictionary<string, object> parameters = new Dictionary<string, object>();
+        private static readonly ISet<string> ReservedProperties = new HashSet<string>(new[] {"type", "title", "status", "detail", "instance", "cause"});
 
-        /**
-         * @see Problem#builder()
-         */
-        public ProblemBuilder()
+        private readonly IDictionary<string, object> _parameters = new Dictionary<string, object>();
+
+        private Uri _type;
+        private string _title;
+        private StatusType _status;
+        private string _detail;
+        private Uri _instance;
+        private Problem _cause;
+
+        private ProblemBuilder()
         {
         }
 
-        public ProblemBuilder withType(Uri type)
+        public ProblemBuilder WithType(Uri type)
         {
-            this.type = type;
+            _type = type;
             return this;
         }
 
-        public ProblemBuilder withTitle(String title)
+        public ProblemBuilder WithTitle(string title)
         {
-            this.title = title;
+            _title = title;
             return this;
         }
 
-        public ProblemBuilder withStatus(StatusType status)
+        public ProblemBuilder WithStatus(StatusType status)
         {
-            this.status = status;
+            _status = status;
             return this;
         }
 
-        public ProblemBuilder withDetail(String detail)
+        public ProblemBuilder WithDetail(string detail)
         {
-            this.detail = detail;
+            _detail = detail;
             return this;
         }
 
-        public ProblemBuilder withInstance(Uri instance)
+        public ProblemBuilder WithInstance(Uri instance)
         {
-            this.instance = instance;
+            _instance = instance;
             return this;
         }
 
-        public ProblemBuilder withCause(Problem cause)
+        public ProblemBuilder WithCause(Problem cause)
         {
-            this.cause = cause;
+            _cause = cause;
             return this;
         }
 
-        /**
-         *
-         * @param key
-         * @param value
-         * @return
-         * @throws IllegalArgumentException if key is any of type, title, status, detail or instance
-         */
-        public ProblemBuilder with(String key, Object value)
+        public ProblemBuilder With(string key, object value)
         {
-            //if (RESERVED_PROPERTIES.contains(key))
-            //{
-            //    throw new ArgumentException("Property " + key + " is reserved");
-            //}
-            //parameters.put(key, value);
+            if (ReservedProperties.Contains(key))
+            {
+                throw new ArgumentException($"Property {key} is reserved", nameof(key));
+            }
+            _parameters.Add(key, value);
             return this;
         }
 
-        public Problem build()
+        public Problem Build()
         {
-            return new Problem(type, title, status, detail, instance, cause, parameters);
-        }
-
-        public static ProblemBuilder create(StatusType status)
-        {
-            return Problem.builder()
-                .withTitle(status.ReasonPhrase)
-                .withStatus(status);
+            return new Problem(_type, _title, _status, _detail, _instance, _cause, _parameters);
         }
     }
 }

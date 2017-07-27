@@ -3,14 +3,14 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using Newtonsoft.Json;
 
 namespace Trifork
 {
     /// <summary>
-    /// The {@link Status} class in JAX-RS doesn't list of official HTTP status codes. The purpose
-    /// of this class is to provide easy access to the missing ones.
-    ///
-    /// @see Status
+    ///     The {@link Status} class in JAX-RS doesn't list of official HTTP status codes. The purpose
+    ///     of this class is to provide easy access to the missing ones.
+    ///     @see Status
     /// </summary>
     [Serializable]
     [DebuggerDisplay("<{StatusCode} ({ReasonPhrase,nq})>")]

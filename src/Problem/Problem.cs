@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Newtonsoft.Json;
 
@@ -13,7 +15,7 @@ namespace Trifork
         private readonly IDictionary<string, object> _parameters = new Dictionary<string, object>();
 
         [JsonConstructor]
-        private Problem() 
+        private Problem()
         {
         }
 
@@ -154,6 +156,8 @@ namespace Trifork
     {
         //public override bool CanRead { get; } = false;
 
+        private static readonly ConcurrentDictionary<Type, TypeConverter> TypeConverters = new ConcurrentDictionary<Type, TypeConverter>();
+
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             var statusType = (StatusType) value;
@@ -163,8 +167,19 @@ namespace Trifork
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            return StatusType.Ok;
-            //throw new NotImplementedException();
+            if (reader.Value == null)
+            {
+                throw new InvalidOperationException("Cannot accept <null> as a StatusType value");
+            }
+
+            var typeConverter = TypeConverters.GetOrAdd(reader.ValueType, TypeDescriptor.GetConverter);
+
+            if (!typeConverter.CanConvertTo(typeof(int)))
+            {
+                throw new InvalidOperationException($"Cannot accept StatusType of type '{reader.ValueType}' with value '{reader.Value}'.");
+            }
+
+            return StatusType.FromValue((int) typeConverter.ConvertTo(reader.Value, typeof(int)));
         }
 
         public override bool CanConvert(Type objectType)

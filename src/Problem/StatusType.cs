@@ -3,197 +3,82 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using Newtonsoft.Json;
 
 namespace Trifork
 {
-    /// <summary>
-    ///     The {@link Status} class in JAX-RS doesn't list of official HTTP status codes. The purpose
-    ///     of this class is to provide easy access to the missing ones.
-    ///     @see Status
-    /// </summary>
     [Serializable]
     [DebuggerDisplay("<{StatusCode} ({ReasonPhrase,nq})>")]
     public class StatusType : IComparable<StatusType>, IEquatable<StatusType>
     {
-        private static readonly string[][] HttpStatusDescriptions =
-        {
-            null,
-            // 100
-            new[]
-            {
-                "Continue",
-                "Switching Protocols",
-                "Processing"
-            },
-            // 200
-            new[]
-            {
-                "OK",
-                "Created",
-                "Accepted",
-                "Non-Authoritative Information",
-                "No Content",
-                "Reset Content",
-                "Partial Content",
-                "Multi-Status"
-            },
-            // 300
-            new[]
-            {
-                "Multiple Choices",
-                "Moved Permanently",
-                "Found",
-                "See Other",
-                "Not Modified",
-                "Use Proxy",
-                null,
-                "Temporary Redirect"
-            },
-            // 400
-            new[]
-            {
-                "Bad Request",
-                "Unauthorized",
-                "Payment Required",
-                "Forbidden",
-                "Not Found",
-                "Method Not Allowed",
-                "Not Acceptable",
-                "Proxy Authentication Required",
-                "Request Timeout",
-                "Conflict",
-                "Gone",
-                "Length Required",
-                "Precondition Failed",
-                "Request Entity Too Large",
-                "Request-Uri Too Long",
-                "Unsupported Media Type",
-                "Requested Range Not Satisfiable",
-                "Expectation Failed",
-                null,
-                null,
-                null,
-                null,
-                "Unprocessable Entity",
-                "Locked",
-                "Failed Dependency",
-                null,
-                "Upgrade Required"
-            },
-            // 500
-            new[]
-            {
-                "Internal Server Error",
-                "Not Implemented",
-                "Bad Gateway",
-                "Service Unavailable",
-                "Gateway Timeout",
-                "Http Version Not Supported",
-                null,
-                "Insufficient Storage"
-            }
-        };
+        public static readonly StatusType Continue = new StatusType(HttpStatusCode.Continue, "Continue");
+        public static readonly StatusType SwitchingProtocols = new StatusType(HttpStatusCode.SwitchingProtocols, "Switching Protocols");
+        public static readonly StatusType Processing = new StatusType(102, "Processing");
+        public static readonly StatusType Checkpoint = new StatusType(103, "Checkpoint");
 
         public static readonly StatusType Ok = new StatusType(HttpStatusCode.OK, "OK");
+        public static readonly StatusType Created = new StatusType(HttpStatusCode.Created, "Created");
+        public static readonly StatusType Accepted = new StatusType(HttpStatusCode.Accepted, "Accepted");
+        public static readonly StatusType NonAuthoritativeInformation = new StatusType(HttpStatusCode.NonAuthoritativeInformation, "Non-Authoritative Information");
+        public static readonly StatusType NoContent = new StatusType(HttpStatusCode.NoContent, "No Content");
+        public static readonly StatusType ResetContent = new StatusType(HttpStatusCode.ResetContent, "Reset Content");
+        public static readonly StatusType PartialContent = new StatusType(HttpStatusCode.PartialContent, "Partial Content");
+        public static readonly StatusType MultiStatus = new StatusType(207, "Multi-Status");
+        public static readonly StatusType AlreadyReported = new StatusType(208, "Already Reported");
+        public static readonly StatusType InstanceManipulationUsed = new StatusType(226, "IM Used");
 
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc7231#section-6.2.1">HTTP/1.1: Semantics and Content, section 6.2.1</a>
-        // /// </summary>
-        //CONTINUE(100, "Continue"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc7231#section-6.2.2">HTTP/1.1: Semantics and Content, section 6.2.2</a>
-        // /// </summary>
-        //SWITCHING_PROTOCOLS(101, "Switching Protocols"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc2518#section-10.1">WebDAV</a>
-        // /// </summary>
-        //PROCESSING(102, "Processing"),
-        ///// <summary>
-        // * @see <a href="http://code.google.com/p/gears/wiki/ResumableHttpRequestsProposal">A proposal for supporting
-        // * resumable POST/PUT HTTP requests in HTTP/1.0</a>
-        // /// </summary>
-        //CHECKPOINT(103, "Checkpoint"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc7231#section-6.3.4">HTTP/1.1: Semantics and Content, section 6.3.4</a>
-        // /// </summary>
-        //NON_AUTHORITATIVE_INFORMATION(203, "Non-Authoritative Information"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc4918#section-13">WebDAV</a>
-        // /// </summary>
-        //MULTI_STATUS(207, "Multi-Status"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc5842#section-7.1">WebDAV Binding Extensions</a>
-        // /// </summary>
-        //ALREADY_REPORTED(208, "Already Reported"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc3229#section-10.4.1">Delta encoding in HTTP</a>
-        // /// </summary>
-        //IM_USED(226, "IM Used"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc7231#section-6.4.1">HTTP/1.1: Semantics and Content, section 6.4.1</a>
-        // /// </summary>
-        //MULTIPLE_CHOICES(300, "Multiple Choices"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc7238">RFC 7238</a>
-        // /// </summary>
-        //PERMANENT_REDIRECT(308, "Permanent Redirect"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc2324#section-2.3.2">HTCPCP/1.0</a>
-        // /// </summary>
-        //I_AM_A_TEAPOT(418, "I'm a teapot"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc4918#section-11.2">WebDAV</a>
-        // /// </summary>
-        //UNPROCESSABLE_ENTITY(422, "Unprocessable Entity"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc4918#section-11.3">WebDAV</a>
-        // /// </summary>
-        //LOCKED(423, "Locked"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc4918#section-11.4">WebDAV</a>
-        // /// </summary>
-        //FAILED_DEPENDENCY(424, "Failed Dependency"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc2817#section-6">Upgrading to TLS Within HTTP/1.1</a>
-        // /// </summary>
-        //UPGRADE_REQUIRED(426, "Upgrade Required"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc6585#section-3">Additional HTTP Status Codes</a>
-        // /// </summary>
-        //PRECONDITION_REQUIRED(428, "Precondition Required"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc6585#section-4">Additional HTTP Status Codes</a>
-        // /// </summary>
-        //TOO_MANY_REQUESTS(429, "Too Many Requests"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc6585#section-5">Additional HTTP Status Codes</a>
-        // /// </summary>
-        //REQUEST_HEADER_FIELDS_TOO_LARGE(431, "Request Header Fields Too Large"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc2295#section-8.1">Transparent Content Negotiation</a>
-        // /// </summary>
-        //VARIANT_ALSO_NEGOTIATES(506, "Variant Also Negotiates"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc4918#section-11.5">WebDAV</a>
-        // /// </summary>
-        //INSUFFICIENT_STORAGE(507, "Insufficient Storage"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc5842#section-7.2">WebDAV Binding Extensions</a>
-        // /// </summary>
-        //LOOP_DETECTED(508, "Loop Detected"),
-        ///// <summary>
-        // * {@code 509 Bandwidth Limit Exceeded}
-        // /// </summary>
-        //BANDWIDTH_LIMIT_EXCEEDED(509, "Bandwidth Limit Exceeded"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc2774#section-7">HTTP Extension Framework</a>
-        // /// </summary>
-        //NOT_EXTENDED(510, "Not Extended"),
-        ///// <summary>
-        // * @see <a href="http://tools.ietf.org/html/rfc6585#section-6">Additional HTTP Status Codes</a>
-        // /// </summary>
-        //NETWORK_AUTHENTICATION_REQUIRED(511, "Network Authentication Required");
+        public static readonly StatusType MultipleChoices = new StatusType(HttpStatusCode.MultipleChoices, "Multiple Choices");
+        public static readonly StatusType MovedPermanently = new StatusType(HttpStatusCode.MovedPermanently, "Moved Permanently");
+        public static readonly StatusType Found = new StatusType(HttpStatusCode.Found, "Found");
+        public static readonly StatusType SeeOther = new StatusType(HttpStatusCode.SeeOther, "See Other");
+        public static readonly StatusType NotModified = new StatusType(HttpStatusCode.NotModified, "Not Modified");
+        public static readonly StatusType UseProxy = new StatusType(HttpStatusCode.UseProxy, "Use Proxy");
+        public static readonly StatusType TemporaryRedirect = new StatusType(HttpStatusCode.TemporaryRedirect, "Temporary Redirect");
+        public static readonly StatusType PermanentRedirect = new StatusType(308, "Permanent Redirect");
+
+        public static readonly StatusType BadRequest = new StatusType(HttpStatusCode.BadRequest, "Bad Request");
+        public static readonly StatusType Unauthorized = new StatusType(HttpStatusCode.Unauthorized, "Unauthorized");
+        public static readonly StatusType PaymentRequired = new StatusType(HttpStatusCode.PaymentRequired, "Payment Required");
+        public static readonly StatusType Forbidden = new StatusType(HttpStatusCode.Forbidden, "Forbidden");
+        public static readonly StatusType NotFound = new StatusType(HttpStatusCode.NotFound, "Not Found");
+        public static readonly StatusType MethodNotAllowed = new StatusType(HttpStatusCode.MethodNotAllowed, "Method Not Allowed");
+        public static readonly StatusType NotAcceptable = new StatusType(HttpStatusCode.NotAcceptable, "Not Acceptable");
+        public static readonly StatusType ProxyAuthenticationRequired = new StatusType(HttpStatusCode.ProxyAuthenticationRequired, "Proxy Authentication Required");
+        public static readonly StatusType RequestTimeout = new StatusType(HttpStatusCode.RequestTimeout, "Request Timeout");
+        public static readonly StatusType Conflict = new StatusType(HttpStatusCode.Conflict, "Conflict");
+        public static readonly StatusType Gone = new StatusType(HttpStatusCode.Gone, "Gone");
+        public static readonly StatusType LengthRequired = new StatusType(HttpStatusCode.LengthRequired, "Length Required");
+        public static readonly StatusType PreconditionFailed = new StatusType(HttpStatusCode.PreconditionFailed, "Precondition Failed");
+        public static readonly StatusType RequestEntityTooLarge = new StatusType(HttpStatusCode.RequestEntityTooLarge, "Request Entity Too Large");
+        public static readonly StatusType RequestUriTooLong = new StatusType(HttpStatusCode.RequestUriTooLong, "Request-Uri Too Long");
+        public static readonly StatusType UnsupportedMediaType = new StatusType(HttpStatusCode.UnsupportedMediaType, "Unsupported Media Type");
+        public static readonly StatusType RequestedRangeNotSatisfiable = new StatusType(HttpStatusCode.RequestedRangeNotSatisfiable, "Requested Range Not Satisfiable");
+        public static readonly StatusType ExpectationFailed = new StatusType(HttpStatusCode.ExpectationFailed, "Expectation Failed");
+        public static readonly StatusType ImATeapot = new StatusType(418, "I'm a teapot");
+        public static readonly StatusType MisdirectedRequest = new StatusType(421, "Misdirected Request");
+        public static readonly StatusType UnprocessableEntity = new StatusType(422, "Unprocessable Entity");
+        public static readonly StatusType Locked = new StatusType(423, "Locked");
+        public static readonly StatusType FailedDependency = new StatusType(424, "Failed Dependency");
+        public static readonly StatusType UpgradeRequired = new StatusType(HttpStatusCode.UpgradeRequired, "Upgrade Required");
+        public static readonly StatusType PreconditionRequired = new StatusType(428, "Precondition Required");
+        public static readonly StatusType TooManyRequests = new StatusType(429, "Too Many Requests");
+        public static readonly StatusType RequestHeaderFieldsTooLarge = new StatusType(431, "Request Header Fields Too Large");
+        public static readonly StatusType ConnectionClosedWithoutResponse = new StatusType(444, "Connection Closed Without Response");
+        public static readonly StatusType UnavailableForLegalReasons = new StatusType(451, "Unavailable For Legal Reasons");
+        public static readonly StatusType ClientClosedRequest = new StatusType(499, "Client Closed Request");
+
+        public static readonly StatusType InternalServerError = new StatusType(HttpStatusCode.InternalServerError, "Internal Server Error");
+        public static readonly StatusType NotImplemented = new StatusType(HttpStatusCode.NotImplemented, "Not Implemented");
+        public static readonly StatusType BadGateway = new StatusType(HttpStatusCode.BadGateway, "Bad Gateway");
+        public static readonly StatusType ServiceUnavailable = new StatusType(HttpStatusCode.ServiceUnavailable, "Service Unavailable");
+        public static readonly StatusType GatewayTimeout = new StatusType(HttpStatusCode.GatewayTimeout, "Gateway Timeout");
+        public static readonly StatusType HttpVersionNotSupported = new StatusType(HttpStatusCode.HttpVersionNotSupported, "Http Version Not Supported");
+        public static readonly StatusType VariantAlsoNegotiates = new StatusType(506, "Variant Also Negotiates");
+        public static readonly StatusType InsufficientStorage = new StatusType(507, "Insufficient Storage");
+        public static readonly StatusType LoopDetected = new StatusType(508, "Loop Detected");
+        public static readonly StatusType BandwidthLimitExceeded = new StatusType(509, "Bandwidth Limit Exceeded");
+        public static readonly StatusType NotExtended = new StatusType(510, "Not Extended");
+        public static readonly StatusType NetworkAuthenticationRequired = new StatusType(511, "Network Authentication Required");
+        public static readonly StatusType NetworkConnectTimeoutError = new StatusType(599, "Network Connect Timeout Error");
 
         private static readonly Lazy<StatusType[]> Enumerations = new Lazy<StatusType[]>(GetEnumerations);
 

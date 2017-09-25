@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using NUnit.Framework;
 using Trifork;
@@ -16,16 +12,14 @@ namespace Problem.Tests
         [Test]
         public void Test1()
         {
-            //dynamic foo = new ExpandoObject();
-            //foo.Bar = "something";
-
-            var foo = ProblemBuilder.Create(StatusType.Ok)
+            var foo = Trifork.Problem.From(StatusType.Ok)
                     .WithType(new Uri("about:blank"))
                     .WithDetail("some detail")
                     .WithInstance(new Uri("http://www.example.org/log/1"))
                     .With("balance", "0")
-                    .Build()
                 ;
+
+            Console.WriteLine(foo);
 
             var settings = new JsonSerializerSettings();
             settings.NullValueHandling = NullValueHandling.Include;
@@ -40,10 +34,6 @@ namespace Problem.Tests
             var problem = JsonConvert.DeserializeObject<Trifork.Problem>(json);
 
             Assert.AreEqual(StatusType.Ok, problem.Status);
-
-
         }
     }
-
-
 }
